@@ -104,26 +104,7 @@ export default function Header() {
         </div>
       </div>
 
-      {function MobileNavLink({ href, label, setIsMenuOpen }) {
-  return (
-    <motion.div
-      variants={{
-        hidden: { opacity: 0, y: 20 },
-        show: { opacity: 1, y: 0 }
-      }}
-      whileHover={{ scale: 1.1 }}
-      whileTap={{ scale: 0.9 }}
-    >
-      <Link
-        href={href}
-        className="nav-link text-2xl font-medium transition-all duration-300 hover:text-forest-green hover:underline hover:underline-offset-8 hover:font-semibold"
-        onClick={() => setIsMenuOpen(false)}
-      >
-        {label}
-      </Link>
-    </motion.div>
-  );
-}}
+      {/* Mobile Navigation */}
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div 
@@ -161,13 +142,10 @@ export default function Header() {
 
 function NavLink({ href, label }) {
   return (
-    <motion.div
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-    >
+    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
       <Link
         href={href}
-        className="nav-link text-lg font-medium tracking-wide py-2 inline-block transition-all duration-300 hover:text-forest-green hover:underline hover:underline-offset-8 hover:font-semibold"
+        className="nav-link text-lg font-medium tracking-wide py-2 inline-block transition-all duration-300 hover:text-forest-green focus:text-forest-green active:text-forest-green underline underline-offset-8"
       >
         {label}
       </Link>
@@ -178,16 +156,13 @@ function NavLink({ href, label }) {
 function MobileNavLink({ href, label, setIsMenuOpen }) {
   return (
     <motion.div
-      variants={{
-        hidden: { opacity: 0, y: 20 },
-        show: { opacity: 1, y: 0 }
-      }}
+      variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.9 }}
     >
       <Link
         href={href}
-        className="nav-link text-2xl font-medium transition-all duration-300 hover:text-forest-green hover:font-semibold"
+        className="nav-link text-2xl font-medium transition-all duration-300 hover:text-forest-green focus:text-forest-green active:text-forest-green underline underline-offset-8"
         onClick={() => setIsMenuOpen(false)}
       >
         {label}
