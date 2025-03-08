@@ -335,15 +335,6 @@ export default function ContactPage() {
             </div>
           </div>
 
-          <div className="mt-12 text-center">
-            <h3 className="text-2xl font-playfair mb-4">Directions</h3>
-            <p className="text-winter-white/80 max-w-3xl mx-auto">
-              From Rishikesh, take the highway towards Badrinath for
-              approximately 25 kilometers. At the Himalayan Foothills junction,
-              turn right onto Mountain Valley Road. Continue for 5 kilometers
-              until you see the Garhwal Goats entrance on your left.
-            </p>
-          </div>
         </div>
       </section>
     </>
