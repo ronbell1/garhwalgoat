@@ -39,6 +39,7 @@ export default function HeroCarousel() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [loadedImages, setLoadedImages] = useState([]);
+  const [direction, setDirection] = useState(1); // 1 for right, -1 for left
   
   // Calculate next index to preload
   const nextIndex = (currentIndex + 1) % slides.length;
@@ -57,6 +58,7 @@ export default function HeroCarousel() {
   const goToPrevious = useCallback(() => {
     if (isAnimating) return;
     setIsAnimating(true);
+    setDirection(-1);
     setCurrentIndex((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
     setTimeout(() => setIsAnimating(false), 500);
   }, [isAnimating]);
@@ -65,11 +67,12 @@ export default function HeroCarousel() {
   const goToNext = useCallback(() => {
     if (isAnimating) return;
     setIsAnimating(true);
+    setDirection(1);
     setCurrentIndex((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
     setTimeout(() => setIsAnimating(false), 500);
   }, [isAnimating]);
 
-  // Auto-slide every 5 seconds (slightly longer to improve performance)
+  // Auto-slide every 5 seconds
   useEffect(() => {
     // Only start auto-sliding once the first image is loaded
     if (loadedImages.includes(slides[currentIndex].id)) {
@@ -78,16 +81,37 @@ export default function HeroCarousel() {
     }
   }, [goToNext, currentIndex, loadedImages]);
 
+  // Animation variants
+  const slideVariants = {
+    enter: (direction) => ({
+      x: direction > 0 ? 500 : -500,
+      opacity: 0
+    }),
+    center: {
+      x: 0,
+      opacity: 1
+    },
+    exit: (direction) => ({
+      x: direction > 0 ? -500 : 500,
+      opacity: 0
+    })
+  };
+
   return (
     <section className="relative h-screen overflow-hidden">
       {/* Slides */}
-      <AnimatePresence initial={false} mode="wait">
+      <AnimatePresence initial={false} custom={direction} mode="wait">
         <motion.div
           key={currentIndex}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
+          custom={direction}
+          variants={slideVariants}
+          initial="enter"
+          animate="center"
+          exit="exit"
+          transition={{ 
+            x: { type: "tween", duration: 0.4, ease: "easeInOut" },
+            opacity: { duration: 0.3 }
+          }}
           className="absolute inset-0"
         >
           <div className="relative h-full w-full">
@@ -109,26 +133,26 @@ export default function HeroCarousel() {
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-winter-white px-4">
               <motion.h1
                 className="text-4xl md:text-6xl lg:text-7xl font-playfair mb-6"
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.1 }}
+                transition={{ duration: 0.5, delay: 0.3 }}
               >
                 {slides[currentIndex].title}
               </motion.h1>
 
               <motion.p
                 className="text-xl md:text-2xl font-montserrat font-light max-w-3xl mb-12"
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.2 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
               >
                 {slides[currentIndex].description}
               </motion.p>
 
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.3 }}
+                transition={{ duration: 0.5, delay: 0.5 }}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
@@ -144,7 +168,7 @@ export default function HeroCarousel() {
         </motion.div>
       </AnimatePresence>
 
-      {/* Hidden preload for next image */}
+      {/* Hidden preload for next and previous images */}
       <div className="hidden" aria-hidden="true">
         {nextIndex !== currentIndex && (
           <Image
@@ -155,35 +179,59 @@ export default function HeroCarousel() {
             onLoad={() => handleImageLoaded(slides[nextIndex].id)}
           />
         )}
+        {/* Preload previous image too */}
+        {currentIndex !== 0 && (
+          <Image
+            src={slides[currentIndex - 1].image}
+            alt="Preload previous"
+            width={1}
+            height={1}
+            onLoad={() => handleImageLoaded(slides[currentIndex - 1].id)}
+          />
+        )}
+        {currentIndex === 0 && slides.length > 1 && (
+          <Image
+            src={slides[slides.length - 1].image}
+            alt="Preload last"
+            width={1}
+            height={1}
+            onLoad={() => handleImageLoaded(slides[slides.length - 1].id)}
+          />
+        )}
       </div>
 
       {/* Navigation buttons - only show when current image is loaded */}
       {loadedImages.includes(slides[currentIndex].id) && (
         <>
-          <button
+          <motion.button
             onClick={goToPrevious}
             className="absolute top-1/2 left-4 -translate-y-1/2 bg-forest-green/70 text-winter-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 hover:bg-gold-accent hover:text-forest-green focus:outline-none z-10"
             aria-label="Previous slide"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
           >
             <ChevronLeft size={24} />
-          </button>
+          </motion.button>
 
-          <button
+          <motion.button
             onClick={goToNext}
             className="absolute top-1/2 right-4 -translate-y-1/2 bg-forest-green/70 text-winter-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 hover:bg-gold-accent hover:text-forest-green focus:outline-none z-10"
             aria-label="Next slide"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
           >
             <ChevronRight size={24} />
-          </button>
+          </motion.button>
 
           {/* Indicators */}
           <div className="absolute bottom-8 left-0 right-0 flex justify-center space-x-3 z-10">
             {slides.map((_, index) => (
-              <button
+              <motion.button
                 key={index}
                 onClick={() => {
                   if (isAnimating) return;
                   setIsAnimating(true);
+                  setDirection(index > currentIndex ? 1 : -1);
                   setCurrentIndex(index);
                   setTimeout(() => setIsAnimating(false), 500);
                 }}
@@ -192,6 +240,7 @@ export default function HeroCarousel() {
                     ? "bg-gold-accent w-8"
                     : "bg-winter-white/60"
                 }`}
+                whileHover={{ scale: 1.2 }}
                 aria-label={`Go to slide ${index + 1}`}
               />
             ))}
