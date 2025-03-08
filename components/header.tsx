@@ -104,7 +104,26 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Mobile Navigation */}
+      {function MobileNavLink({ href, label, setIsMenuOpen }) {
+  return (
+    <motion.div
+      variants={{
+        hidden: { opacity: 0, y: 20 },
+        show: { opacity: 1, y: 0 }
+      }}
+      whileHover={{ scale: 1.1 }}
+      whileTap={{ scale: 0.9 }}
+    >
+      <Link
+        href={href}
+        className="nav-link text-2xl font-medium transition-all duration-300 hover:text-forest-green hover:underline hover:underline-offset-8 hover:font-semibold"
+        onClick={() => setIsMenuOpen(false)}
+      >
+        {label}
+      </Link>
+    </motion.div>
+  );
+}}
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div 
