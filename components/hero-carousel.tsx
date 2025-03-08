@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import Image from "next/image";
+import NextImage from "next/image"; // Renamed from Image to NextImage
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -41,7 +41,32 @@ export default function HeroCarousel() {
   const [isAnimating, setIsAnimating] = useState(false);
   const [direction, setDirection] = useState(1); // 1 for right, -1 for left
   const autoPlayRef = useRef(null);
+  const timeoutRef = useRef(null);
   const isVisibleRef = useRef(true);
+  const initialLoadRef = useRef(true);
+  
+  // Enhanced preloading for smoother transitions
+  useEffect(() => {
+    // Create and preload all images on initial load
+    const preloadAllImages = () => {
+      slides.forEach(slide => {
+        // Using window.Image explicitly to avoid conflicts
+        const img = new window.Image();
+        img.src = slide.image;
+        img.onload = () => {
+          // Mark image as loaded in browser cache
+        };
+      });
+    };
+    
+    // Only run in the browser environment
+    if (typeof window !== 'undefined') {
+      preloadAllImages();
+    }
+    
+    // Mark initial load as complete
+    initialLoadRef.current = false;
+  }, []);
   
   // Previous slide
   const goToPrevious = useCallback(() => {
@@ -49,7 +74,13 @@ export default function HeroCarousel() {
     setIsAnimating(true);
     setDirection(-1);
     setCurrentIndex((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
-    setTimeout(() => setIsAnimating(false), 500);
+    
+    // Use RAF for smoother transition timing
+    requestAnimationFrame(() => {
+      timeoutRef.current = setTimeout(() => {
+        setIsAnimating(false);
+      }, 400); // Reduced from 500ms to 400ms for faster transitions
+    });
   }, [isAnimating]);
 
   // Next slide
@@ -58,11 +89,20 @@ export default function HeroCarousel() {
     setIsAnimating(true);
     setDirection(1);
     setCurrentIndex((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
-    setTimeout(() => setIsAnimating(false), 500);
+    
+    // Use RAF for smoother transition timing  
+    requestAnimationFrame(() => {
+      timeoutRef.current = setTimeout(() => {
+        setIsAnimating(false);
+      }, 400); // Reduced from 500ms to 400ms for faster transitions
+    });
   }, [isAnimating]);
 
   // Setup IntersectionObserver to pause auto-play when not visible
   useEffect(() => {
+    // Only run in browser environment
+    if (typeof window === 'undefined') return;
+    
     const observer = new IntersectionObserver(
       ([entry]) => {
         isVisibleRef.current = entry.isIntersecting;
@@ -84,37 +124,40 @@ export default function HeroCarousel() {
 
   // Auto-slide setup with requestAnimationFrame for better performance
   useEffect(() => {
-    let timeoutId;
+    // Only run in browser environment
+    if (typeof window === 'undefined') return;
     
-    const tick = () => {
-      goToNext();
-      timeoutId = setTimeout(() => {
-        autoPlayRef.current = requestAnimationFrame(tick);
-      }, 5000);
+    const startAutoplay = () => {
+      clearTimeout(timeoutRef.current);
+      autoPlayRef.current = requestAnimationFrame(() => {
+        timeoutRef.current = setTimeout(() => {
+          goToNext();
+          startAutoplay();
+        }, 5000);
+      });
     };
     
-    autoPlayRef.current = requestAnimationFrame(() => {
-      timeoutId = setTimeout(tick, 5000);
-    });
+    // Start autoplay
+    startAutoplay();
     
     return () => {
-      if (autoPlayRef.current) {
-        cancelAnimationFrame(autoPlayRef.current);
-      }
-      clearTimeout(timeoutId);
+      cancelAnimationFrame(autoPlayRef.current);
+      clearTimeout(timeoutRef.current);
     };
   }, [goToNext]);
 
   // Pause auto-play when tab is not visible
   useEffect(() => {
+    // Only run in browser environment
+    if (typeof window === 'undefined') return;
+    
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        if (autoPlayRef.current) {
-          cancelAnimationFrame(autoPlayRef.current);
-        }
+        cancelAnimationFrame(autoPlayRef.current);
+        clearTimeout(timeoutRef.current);
       } else {
         autoPlayRef.current = requestAnimationFrame(() => {
-          setTimeout(goToNext, 5000);
+          timeoutRef.current = setTimeout(goToNext, 5000);
         });
       }
     };
@@ -126,10 +169,18 @@ export default function HeroCarousel() {
     };
   }, [goToNext]);
 
-  // Animation variants
+  // Enhanced cleanup on unmount
+  useEffect(() => {
+    return () => {
+      cancelAnimationFrame(autoPlayRef.current);
+      clearTimeout(timeoutRef.current);
+    };
+  }, []);
+
+  // Animation variants - optimized for smoother loops
   const slideVariants = {
     enter: (direction) => ({
-      x: direction > 0 ? 500 : -500,
+      x: direction > 0 ? 300 : -300, // Reduced from 500 to 300 for faster transitions
       opacity: 0
     }),
     center: {
@@ -137,19 +188,22 @@ export default function HeroCarousel() {
       opacity: 1
     },
     exit: (direction) => ({
-      x: direction > 0 ? -500 : 500,
+      x: direction > 0 ? -300 : 300, // Reduced from 500 to 300 for faster transitions
       opacity: 0
     })
   };
 
-  // Calculate next and previous indices for dynamic image preloading
-  const nextIndex = (currentIndex + 1) % slides.length;
+  // Get the indices of all slides to ensure proper preloading
   const prevIndex = currentIndex === 0 ? slides.length - 1 : currentIndex - 1;
+  const nextIndex = (currentIndex + 1) % slides.length;
+  
+  // Special preloading for the first slide when on the last slide
+  const needsSpecialPreload = currentIndex === slides.length - 1;
 
   return (
     <>
-      {/* Preload Link tags in the head */}
       <Head>
+        {/* Preload link tags in the head with higher importance */}
         {slides.map(slide => (
           <link 
             key={slide.id}
@@ -157,15 +211,16 @@ export default function HeroCarousel() {
             href={slide.image}
             as="image"
             type="image/webp"
+            importance="high"
           />
         ))}
       </Head>
       
       <section id="hero-carousel" className="relative h-screen overflow-hidden">
-        {/* Eagerly load all images upfront with proper srcSet for responsive loading */}
+        {/* Eagerly load all images upfront */}
         <div className="hidden" aria-hidden="true">
           {slides.map((slide) => (
-            <Image
+            <NextImage
               key={slide.id}
               src={slide.image}
               alt="Preload"
@@ -173,11 +228,29 @@ export default function HeroCarousel() {
               height={1080}
               priority={true}
               fetchPriority="high"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 100vw" 
+              loading="eager"
+              sizes="100vw"
               quality={90}
             />
           ))}
         </div>
+        
+        {/* Special preloading for the first slide when on the last slide */}
+        {needsSpecialPreload && (
+          <div className="hidden" aria-hidden="true">
+            <NextImage
+              src={slides[0].image}
+              alt="Preload first slide"
+              width={1920}
+              height={1080}
+              priority={true}
+              fetchPriority="high"
+              loading="eager"
+              sizes="100vw"
+              quality={90}
+            />
+          </div>
+        )}
         
         {/* Slides */}
         <AnimatePresence initial={false} custom={direction} mode="wait">
@@ -189,13 +262,13 @@ export default function HeroCarousel() {
             animate="center"
             exit="exit"
             transition={{ 
-              x: { type: "spring", stiffness: 300, damping: 30 },
-              opacity: { duration: 0.3 }
+              x: { type: "spring", stiffness: 350, damping: 30 }, // Increased stiffness for faster motion
+              opacity: { duration: 0.25 } // Reduced for faster fade
             }}
             className="absolute inset-0"
           >
             <div className="relative h-full w-full transform-gpu will-change-transform">
-              <Image
+              <NextImage
                 src={slides[currentIndex].image}
                 alt={slides[currentIndex].title}
                 fill
@@ -207,6 +280,7 @@ export default function HeroCarousel() {
                 placeholder="blur"
                 blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
                 loading="eager"
+                unoptimized={true} // Skip optimization to ensure immediate rendering from cache
               />
               <div className="absolute inset-0 bg-forest-green/50" />
 
@@ -216,7 +290,7 @@ export default function HeroCarousel() {
                   className="text-4xl md:text-6xl lg:text-7xl font-playfair mb-6"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.2 }}
+                  transition={{ duration: 0.4, delay: 0.15 }} // Faster animations
                 >
                   {slides[currentIndex].title}
                 </motion.h1>
@@ -225,7 +299,7 @@ export default function HeroCarousel() {
                   className="text-xl md:text-2xl font-montserrat font-light max-w-3xl mb-12"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.3 }}
+                  transition={{ duration: 0.4, delay: 0.25 }} // Faster animations
                 >
                   {slides[currentIndex].description}
                 </motion.p>
@@ -233,7 +307,7 @@ export default function HeroCarousel() {
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.4 }}
+                  transition={{ duration: 0.4, delay: 0.35 }} // Faster animations
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -250,27 +324,7 @@ export default function HeroCarousel() {
           </motion.div>
         </AnimatePresence>
 
-        {/* Actively preload next and previous images for better UX */}
-        <div className="hidden" aria-hidden="true">
-          <Image
-            src={slides[nextIndex].image}
-            alt="Preload next"
-            width={1920}
-            height={1080}
-            priority={true}
-            fetchPriority="high"
-          />
-          <Image
-            src={slides[prevIndex].image}
-            alt="Preload previous"
-            width={1920}
-            height={1080}
-            priority={true}
-            fetchPriority="high"
-          />
-        </div>
-
-        {/* Navigation buttons - always visible */}
+        {/* Navigation buttons */}
         <motion.button
           onClick={goToPrevious}
           className="absolute top-1/2 left-4 -translate-y-1/2 bg-forest-green/70 text-winter-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 hover:bg-gold-accent hover:text-forest-green focus:outline-none z-10"
@@ -301,7 +355,11 @@ export default function HeroCarousel() {
                 setIsAnimating(true);
                 setDirection(index > currentIndex ? 1 : -1);
                 setCurrentIndex(index);
-                setTimeout(() => setIsAnimating(false), 500);
+                requestAnimationFrame(() => {
+                  timeoutRef.current = setTimeout(() => {
+                    setIsAnimating(false);
+                  }, 400);
+                });
               }}
               className={`w-3 h-3 rounded-full transition-all duration-300 ${
                 index === currentIndex
