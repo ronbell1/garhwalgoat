@@ -1,0 +1,121 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --forest-green: 26 58 42;
+    --winter-white: 248 249 250;
+    --walnut-brown: 94 75 60;
+    --warm-cognac: 198 125 52;
+    --gold-accent: 212 175 55;
+    --stone-gray: 138 141 143;
+  }
+
+  body {
+    @apply antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-playfair;
+  }
+
+  h4,
+  h5,
+  h6 {
+    @apply font-montserrat font-light;
+  }
+
+  p {
+    @apply font-lato;
+  }
+
+  blockquote {
+    @apply font-cormorant;
+  }
+}
+
+@layer components {
+  .wood-texture {
+    background-image: url("/wood-texture.jpg");
+    background-size: cover;
+    background-position: center;
+    position: relative;
+  }
+
+  .wood-texture::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(248, 249, 250, 0.85);
+    z-index: 0;
+  }
+
+  .wood-texture > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .gold-divider {
+    @apply h-px bg-gold-accent my-8 mx-auto w-24;
+  }
+
+  .nav-link {
+    @apply relative font-montserrat text-sm uppercase tracking-wider font-light transition-colors duration-300;
+  }
+
+  .nav-link::after {
+    content: "";
+    @apply absolute left-0 bottom-0 w-0 h-px bg-gold-accent transition-all duration-300;
+  }
+
+  .nav-link:hover::after {
+    @apply w-full;
+  }
+
+  .btn-primary {
+    @apply bg-forest-green text-winter-white px-6 py-3 font-montserrat text-sm uppercase tracking-wider font-light transition-all duration-300 hover:bg-walnut-brown;
+  }
+
+  .btn-secondary {
+    @apply border border-forest-green text-forest-green px-6 py-3 font-montserrat text-sm uppercase tracking-wider font-light transition-all duration-300 hover:bg-forest-green hover:text-winter-white;
+  }
+
+  .input-field {
+    @apply bg-winter-white border-b border-stone-gray px-4 py-2 w-full font-lato focus:outline-none focus:border-gold-accent transition-colors duration-300;
+  }
+}
+
+/* Smooth scrolling for the entire page */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Optimize animations for reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Ensure images fade in smoothly */
+img {
+  transition: opacity 0.5s ease-in-out;
+}
+
+img.loading {
+  opacity: 0;
+}
+
+img.loaded {
+  opacity: 1;
+}
+
