@@ -205,7 +205,7 @@ export default function AboutPage() {
                     />
                   </div>
 
-                  <h3 className="text-2xl font-playfair mt-6 mb-2">Gautam Bhandari</h3>
+                  <h3 className="text-2xl font-playfair mt-6 mb-2">Gautam Singh Bhandari</h3>
                   <p className="text-[#D4AF37] font-montserrat text-sm uppercase tracking-wider">Founder & CEO</p>
                 </div>
 
@@ -230,7 +230,7 @@ export default function AboutPage() {
 
                   <div className="flex mt-8 pt-6 border-t border-white/10">
                     <a
-                      href="https://wa.me/1234567890"
+                      href="https://wa.me/918860876171"
                       className="text-[#D4AF37] hover:text-white transition-colors duration-300 flex items-center gap-2 mr-6"
                       target="_blank"
                       rel="noopener noreferrer"
@@ -239,7 +239,7 @@ export default function AboutPage() {
                       <span>WhatsApp</span>
                     </a>
                     <a
-                      href="mailto:gautam@garhwalgoats.com"
+                      href="mailto:garhwalgoats@gmail.com"
                       className="text-[#D4AF37] hover:text-white transition-colors duration-300 flex items-center gap-2"
                     >
                       <Mail size={18} />

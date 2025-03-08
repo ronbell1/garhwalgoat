@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 const slides = [
   {
     id: 1,
-    image: "/herofinal.webp?height=1080&width=1920",
+    image: "/herofinal.webp",
     title: "Garhwal Goats",
     description:
       "Premium goat breeds raised in the pristine mountains of Uttrakhand",
@@ -18,7 +18,7 @@ const slides = [
   },
   {
     id: 2,
-    image: "/hero1.webp?height=1080&width=1920",
+    image: "/hero1.webp",
     title: "Premium Quality Products",
     description:
       "Experience the finest products from our mountain-raised goats",
@@ -27,7 +27,7 @@ const slides = [
   },
   {
     id: 3,
-    image: "/hero3.webp?height=1080&width=1920",
+    image: "/hero3.webp",
     title: "Sustainable & Ethical Farming",
     description: "Working in harmony with nature and tradition",
     buttonText: "Learn Our Practices",
@@ -38,6 +38,20 @@ const slides = [
 export default function HeroCarousel() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [loadedImages, setLoadedImages] = useState([]);
+  
+  // Calculate next index to preload
+  const nextIndex = (currentIndex + 1) % slides.length;
+
+  // Mark image as loaded
+  const handleImageLoaded = useCallback((id) => {
+    setLoadedImages(prev => {
+      if (!prev.includes(id)) {
+        return [...prev, id];
+      }
+      return prev;
+    });
+  }, []);
 
   // Previous slide
   const goToPrevious = useCallback(() => {
@@ -55,11 +69,14 @@ export default function HeroCarousel() {
     setTimeout(() => setIsAnimating(false), 500);
   }, [isAnimating]);
 
-  // Auto-slide every 4 seconds (was 8s)
+  // Auto-slide every 5 seconds (slightly longer to improve performance)
   useEffect(() => {
-    const interval = setInterval(goToNext, 4000);
-    return () => clearInterval(interval);
-  }, [goToNext]);
+    // Only start auto-sliding once the first image is loaded
+    if (loadedImages.includes(slides[currentIndex].id)) {
+      const interval = setInterval(goToNext, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [goToNext, currentIndex, loadedImages]);
 
   return (
     <section className="relative h-screen overflow-hidden">
@@ -67,51 +84,51 @@ export default function HeroCarousel() {
       <AnimatePresence initial={false} mode="wait">
         <motion.div
           key={currentIndex}
-          initial={{ opacity: 0, x: 200 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -200 }}
-          transition={{ duration: 0.5, ease: "easeInOut" }} // Faster transition
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
           className="absolute inset-0"
         >
           <div className="relative h-full w-full">
             <Image
-              src={slides[currentIndex].image || "/placeholder.svg"}
+              src={slides[currentIndex].image}
               alt={slides[currentIndex].title}
               fill
               className="object-cover"
-              priority
+              priority={currentIndex === 0}
+              sizes="100vw"
+              quality={80}
+              onLoad={() => handleImageLoaded(slides[currentIndex].id)}
+              placeholder="blur"
+              blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
             />
             <div className="absolute inset-0 bg-forest-green/50" />
 
             {/* Content */}
-            <motion.div
-              className="absolute inset-0 flex flex-col items-center justify-center text-center text-winter-white px-4"
-              initial={{ y: 20 }}
-              animate={{ y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-            >
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-winter-white px-4">
               <motion.h1
                 className="text-4xl md:text-6xl lg:text-7xl font-playfair mb-6"
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
+                transition={{ duration: 0.4, delay: 0.1 }}
               >
                 {slides[currentIndex].title}
               </motion.h1>
 
               <motion.p
                 className="text-xl md:text-2xl font-montserrat font-light max-w-3xl mb-12"
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
+                transition={{ duration: 0.4, delay: 0.2 }}
               >
                 {slides[currentIndex].description}
               </motion.p>
 
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.5 }}
+                transition={{ duration: 0.4, delay: 0.3 }}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
@@ -122,54 +139,65 @@ export default function HeroCarousel() {
                   {slides[currentIndex].buttonText}
                 </Link>
               </motion.div>
-            </motion.div>
+            </div>
           </div>
         </motion.div>
       </AnimatePresence>
 
-      {/* Previous Button */}
-      <motion.button
-        onClick={goToPrevious}
-        className="absolute top-1/2 left-4 -translate-y-1/2 bg-forest-green/70 text-winter-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 hover:bg-gold-accent hover:text-forest-green focus:outline-none z-10"
-        aria-label="Previous slide"
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-      >
-        <ChevronLeft size={24} />
-      </motion.button>
-
-      {/* Next Button */}
-      <motion.button
-        onClick={goToNext}
-        className="absolute top-1/2 right-4 -translate-y-1/2 bg-forest-green/70 text-winter-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 hover:bg-gold-accent hover:text-forest-green focus:outline-none z-10"
-        aria-label="Next slide"
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-      >
-        <ChevronRight size={24} />
-      </motion.button>
-
-      {/* Indicators */}
-      <div className="absolute bottom-8 left-0 right-0 flex justify-center space-x-3 z-10">
-        {slides.map((_, index) => (
-          <motion.button
-            key={index}
-            onClick={() => {
-              if (isAnimating) return;
-              setIsAnimating(true);
-              setCurrentIndex(index);
-              setTimeout(() => setIsAnimating(false), 500);
-            }}
-            className={`w-3 h-3 rounded-full transition-all duration-300 ${
-              index === currentIndex
-                ? "bg-gold-accent w-8"
-                : "bg-winter-white/60"
-            }`}
-            whileHover={{ scale: 1.2 }}
-            aria-label={`Go to slide ${index + 1}`}
+      {/* Hidden preload for next image */}
+      <div className="hidden" aria-hidden="true">
+        {nextIndex !== currentIndex && (
+          <Image
+            src={slides[nextIndex].image}
+            alt="Preload next"
+            width={1}
+            height={1}
+            onLoad={() => handleImageLoaded(slides[nextIndex].id)}
           />
-        ))}
+        )}
       </div>
+
+      {/* Navigation buttons - only show when current image is loaded */}
+      {loadedImages.includes(slides[currentIndex].id) && (
+        <>
+          <button
+            onClick={goToPrevious}
+            className="absolute top-1/2 left-4 -translate-y-1/2 bg-forest-green/70 text-winter-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 hover:bg-gold-accent hover:text-forest-green focus:outline-none z-10"
+            aria-label="Previous slide"
+          >
+            <ChevronLeft size={24} />
+          </button>
+
+          <button
+            onClick={goToNext}
+            className="absolute top-1/2 right-4 -translate-y-1/2 bg-forest-green/70 text-winter-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 hover:bg-gold-accent hover:text-forest-green focus:outline-none z-10"
+            aria-label="Next slide"
+          >
+            <ChevronRight size={24} />
+          </button>
+
+          {/* Indicators */}
+          <div className="absolute bottom-8 left-0 right-0 flex justify-center space-x-3 z-10">
+            {slides.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => {
+                  if (isAnimating) return;
+                  setIsAnimating(true);
+                  setCurrentIndex(index);
+                  setTimeout(() => setIsAnimating(false), 500);
+                }}
+                className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                  index === currentIndex
+                    ? "bg-gold-accent w-8"
+                    : "bg-winter-white/60"
+                }`}
+                aria-label={`Go to slide ${index + 1}`}
+              />
+            ))}
+          </div>
+        </>
+      )}
     </section>
   );
 }
