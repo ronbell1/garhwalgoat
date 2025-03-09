@@ -44,7 +44,7 @@ export default function ContactPage() {
                 For fastest response, connect with us directly via WhatsApp
               </p>
               <a
-                href="https://wa.me/918860876171"
+                href="https://wa.me/918476969005"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-[#25D366] hover:bg-[#128C7E] text-white px-5 py-2 rounded-lg font-montserrat text-sm tracking-wide transition-all duration-300 flex items-center shadow-md hover:shadow-lg transform hover:-translate-y-1"
@@ -117,7 +117,7 @@ export default function ContactPage() {
                         <h3 className="font-montserrat font-medium mb-1">
                           Phone
                         </h3>
-                        <p className="text-forest-green/80">+91 88608 76171</p>
+                        <p className="text-forest-green/80">+91 84769 69005</p>
                       </div>
                     </div>
 
@@ -126,14 +126,27 @@ export default function ContactPage() {
                         className="text-gold-accent mr-4 mt-1 flex-shrink-0"
                         size={20}
                       />
-                      <div>
-                        <h3 className="font-montserrat font-medium mb-1">
-                          Email
-                        </h3>
-                        <p className="text-forest-green/80">
-                          garhwalgoats@gmail.com
-                        </p>
-                      </div>
+                    <div>
+  <h3 className="font-montserrat font-medium mb-1">Email</h3>
+  <p className="text-forest-green/80">
+    <a
+      href="mailto:garhwalgoats@gmail.com"
+      onClick={(e) => {
+        if (!/Mobi|Android/i.test(navigator.userAgent)) {
+          e.preventDefault();
+          window.open(
+            "https://mail.google.com/mail/?view=cm&fs=1&to=garhwalgoats@gmail.com",
+            "_blank"
+          );
+        }
+      }}
+      className="hover:underline"
+    >
+      garhwalgoats@gmail.com
+    </a>
+  </p>
+</div>
+
                     </div>
 
                     <div className="flex items-start">
@@ -149,9 +162,8 @@ export default function ContactPage() {
                           Monday - Friday: 9:00 AM - 5:00 PM
                         </p>
                         <p className="text-forest-green/80">
-                          Saturday: 10:00 AM - 3:00 PM
+                          Saturday - Sunday: 10:00 AM - 4:00 PM
                         </p>
-                        <p className="text-forest-green/80">Sunday: Closed</p>
                       </div>
                     </div>
                   </div>

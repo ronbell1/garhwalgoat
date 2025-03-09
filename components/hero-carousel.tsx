@@ -10,7 +10,7 @@ import Head from "next/head"
 const slides = [
   {
     id: 1,
-    image: "/herofinal.webp",
+    image: "/herofinal1.webp",
     title: "Garhwal Goats",
     description: "Premium goat breeds raised in the pristine mountains of Uttrakhand",
     buttonText: "Discover Our Heritage",

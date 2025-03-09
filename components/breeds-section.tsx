@@ -9,7 +9,7 @@ const breeds = [
   {
     id: 1,
     name: "Jumnapari",
-    image: "/breed1.webp?height=400&width=400",
+    image: "/jamnapuri.jpg?height=400&width=400",
     description: "A large, dual-purpose breed known for its distinctive Roman nose and pendulous ears.",
     origin: "Uttar Pradesh, India",
     characteristics: "Exported to Indonesia (known as Etawah)",
@@ -23,7 +23,7 @@ const breeds = [
   {
     id: 2,
     name: "Barbari",
-    image: "/breed2.jpeg?height=400&width=400",
+    image: "/barbari.jpg?height=400&width=400",
     description: "A medium-sized breed with a compact body, ideal for intensive farming systems.",
     origin: "India (adapted to local conditions)",
     characteristics: "Seasonal breeder used for intensive farming",

@@ -5,10 +5,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { usePathname } from "next/navigation";
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const pathname = usePathname();
+  const isLandingPage = pathname === "/";
 
   useEffect(() => {
     const handleScroll = () => {
@@ -61,14 +64,34 @@ export default function Header() {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center">
             <div className="flex items-center h-full space-x-10">
-              <NavLink href="/" label="Home" />
-              <NavLink href="/about" label="About Us" />
-              <NavLink href="/products" label="Products" />
-              <NavLink href="/contact" label="Contact" />
+              <NavLink 
+                href="/" 
+                label="Home" 
+                isScrolled={isScrolled}
+                isLandingPage={isLandingPage}
+              />
+              <NavLink 
+                href="/about" 
+                label="About Us" 
+                isScrolled={isScrolled}
+                isLandingPage={isLandingPage}
+              />
+              <NavLink 
+                href="/products" 
+                label="Products" 
+                isScrolled={isScrolled}
+                isLandingPage={isLandingPage}
+              />
+              <NavLink 
+                href="/contact" 
+                label="Contact" 
+                isScrolled={isScrolled}
+                isLandingPage={isLandingPage}
+              />
             </div>
           </nav>
 
-          {/* Mobile Menu Button */}
+          {/* Mobile Menu Button - Always use forest-green for mobile */}
           <motion.button
             className="md:hidden relative z-50 text-forest-green"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -140,7 +163,7 @@ export default function Header() {
   );
 }
 
-function NavLink({ href, label }) {
+function NavLink({ href, label, isScrolled, isLandingPage }) {
   return (
     <motion.div
       whileHover={{ scale: 1.05 }}
@@ -148,7 +171,13 @@ function NavLink({ href, label }) {
     >
       <Link
         href={href}
-        className="nav-link text-lg font-medium tracking-wide py-2 inline-block transition-all duration-300 hover:text-forest-green hover:underline hover:underline-offset-8 hover:font-semibold"
+        className={`nav-link text-lg font-medium tracking-wide py-2 inline-block transition-all duration-300 ${
+          isLandingPage 
+            ? (isScrolled 
+                ? "text-forest-green hover:text-forest-green" 
+                : "text-winter-white hover:text-winter-white font-semibold")
+            : "text-forest-green hover:text-forest-green"
+        } hover:underline hover:underline-offset-8 hover:font-semibold`}
       >
         {label}
       </Link>
@@ -168,7 +197,7 @@ function MobileNavLink({ href, label, setIsMenuOpen }) {
     >
       <Link
         href={href}
-        className="nav-link text-2xl font-medium transition-all duration-300 hover:text-forest-green hover:font-semibold"
+        className="nav-link text-2xl font-medium transition-all duration-300 text-forest-green hover:text-forest-green hover:font-semibold"
         onClick={() => setIsMenuOpen(false)}
       >
         {label}
