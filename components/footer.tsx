@@ -72,7 +72,7 @@ export default function Footer() {
                </p>
               <p>Samshergarh, Balawala,</p>
               <p>Dehradun, Uttarakhand 248001</p>
-              <p>Phone: +91 88608 76171</p>
+              <p>Phone: +91 84769 69005</p>
               <p>Email: garhwalgoats@gmail.com</p>
             </address>
           </div>
