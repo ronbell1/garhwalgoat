@@ -1,11 +1,12 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
-import NextImage from "next/image" // Renamed from Image to NextImage
+import NextImage from "next/image"
 import Link from "next/link"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import Head from "next/head"
+import { useIsMobile } from "@/hooks/use-is-mobile"
 
 const slides = [
   {
@@ -34,92 +35,49 @@ const slides = [
   },
 ]
 
-// Custom hook to detect mobile devices
-const useIsMobile = () => {
-  const [isMobile, setIsMobile] = useState(false)
-
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768) // Adjust breakpoint as needed
-    }
-
-    handleResize() // Check on mount
-    window.addEventListener("resize", handleResize)
-
-    return () => window.removeEventListener("resize", handleResize)
-  }, [])
-
-  return isMobile
-}
-
 export default function HeroCarousel() {
-  const [carouselState, setCarouselState] = useState({
-    currentIndex: 0,
-    direction: 1,
-  })
+  const [currentIndex, setCurrentIndex] = useState(0)
   const [isAnimating, setIsAnimating] = useState(false)
-  const autoPlayRef = useRef(null)
+  const [direction, setDirection] = useState(1) // 1 for right, -1 for left
   const timeoutRef = useRef(null)
   const isVisibleRef = useRef(true)
-  const initialLoadRef = useRef(true)
   const isMobile = useIsMobile()
-
-  // Enhanced preloading for smoother transitions
-  useEffect(() => {
-    // Create and preload all images on initial load
-    const preloadAllImages = () => {
-      slides.forEach((slide) => {
-        // Using window.Image explicitly to avoid conflicts
-        const img = new window.Image()
-        img.src = slide.image
-        img.onload = () => {
-          // Mark image as loaded in browser cache
-        }
-      })
-    }
-
-    // Only run in the browser environment
-    if (typeof window !== "undefined") {
-      preloadAllImages()
-    }
-
-    // Mark initial load as complete
-    initialLoadRef.current = false
-  }, [])
 
   // Previous slide
   const goToPrevious = useCallback(() => {
     if (isAnimating) return
     setIsAnimating(true)
-    setCarouselState((prevState) => ({
-      currentIndex: prevState.currentIndex === 0 ? slides.length - 1 : prevState.currentIndex - 1,
-      direction: -1,
-    }))
 
-    // Use RAF for smoother transition timing
-    requestAnimationFrame(() => {
-      timeoutRef.current = setTimeout(() => {
+    // Combine state updates for better performance
+    setDirection(-1)
+    setCurrentIndex((prev) => (prev === 0 ? slides.length - 1 : prev - 1))
+
+    // Simpler timeout without requestAnimationFrame for better mobile performance
+    timeoutRef.current = setTimeout(
+      () => {
         setIsAnimating(false)
-      }, 400) // Reduced from 500ms to 400ms for faster transitions
-    })
-  }, [isAnimating])
+      },
+      isMobile ? 300 : 400,
+    ) // Even faster on mobile
+  }, [isAnimating, isMobile])
 
   // Next slide
   const goToNext = useCallback(() => {
     if (isAnimating || !isVisibleRef.current) return
     setIsAnimating(true)
-    setCarouselState((prevState) => ({
-      currentIndex: prevState.currentIndex === slides.length - 1 ? 0 : prevState.currentIndex + 1,
-      direction: 1,
-    }))
 
-    // Use RAF for smoother transition timing
-    requestAnimationFrame(() => {
-      timeoutRef.current = setTimeout(() => {
+    // Combine state updates for better performance
+    setDirection(1)
+    setCurrentIndex((prev) => (prev === slides.length - 1 ? 0 : prev + 1))
+
+    // Simpler timeout without requestAnimationFrame for better mobile performance
+    timeoutRef.current = setTimeout(
+      () => {
         setIsAnimating(false)
-      }, 400) // Reduced from 500ms to 400ms for faster transitions
-    })
-  }, [isAnimating])
+      },
+      isMobile ? 300 : 400,
+    ) // Even faster on mobile
+  }, [isAnimating, isMobile])
 
   // Setup IntersectionObserver to pause auto-play when not visible
   useEffect(() => {
@@ -130,7 +88,7 @@ export default function HeroCarousel() {
       ([entry]) => {
         isVisibleRef.current = entry.isIntersecting
       },
-      { threshold: 0.3 },
+      { threshold: 0.2 }, // Increased threshold for better performance
     )
 
     const carouselElement = document.getElementById("hero-carousel")
@@ -145,26 +103,27 @@ export default function HeroCarousel() {
     }
   }, [])
 
-  // Auto-slide setup with requestAnimationFrame for better performance
+  // Auto-slide setup with optimized timers for mobile
   useEffect(() => {
     // Only run in browser environment
     if (typeof window === "undefined") return
 
     const startAutoplay = () => {
       clearTimeout(timeoutRef.current)
-      autoPlayRef.current = requestAnimationFrame(() => {
-        timeoutRef.current = setTimeout(() => {
+
+      // Use simple setTimeout for better mobile performance
+      timeoutRef.current = setTimeout(() => {
+        if (isVisibleRef.current) {
           goToNext()
-          startAutoplay()
-        }, 5000)
-      })
+        }
+        startAutoplay()
+      }, 5000)
     }
 
     // Start autoplay
     startAutoplay()
 
     return () => {
-      cancelAnimationFrame(autoPlayRef.current)
       clearTimeout(timeoutRef.current)
     }
   }, [goToNext])
@@ -176,12 +135,9 @@ export default function HeroCarousel() {
 
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        cancelAnimationFrame(autoPlayRef.current)
         clearTimeout(timeoutRef.current)
       } else {
-        autoPlayRef.current = requestAnimationFrame(() => {
-          timeoutRef.current = setTimeout(goToNext, 5000)
-        })
+        timeoutRef.current = setTimeout(goToNext, 5000)
       }
     }
 
@@ -195,15 +151,14 @@ export default function HeroCarousel() {
   // Enhanced cleanup on unmount
   useEffect(() => {
     return () => {
-      cancelAnimationFrame(autoPlayRef.current)
       clearTimeout(timeoutRef.current)
     }
   }, [])
 
-  // Animation variants - optimized for smoother loops
+  // Animation variants - optimized for mobile
   const slideVariants = {
     enter: (direction) => ({
-      x: direction > 0 ? 300 : -300, // Reduced from 500 to 300 for faster transitions
+      x: direction > 0 ? (isMobile ? 200 : 300) : isMobile ? -200 : -300, // Smaller distance on mobile
       opacity: 0,
     }),
     center: {
@@ -211,78 +166,63 @@ export default function HeroCarousel() {
       opacity: 1,
     },
     exit: (direction) => ({
-      x: direction > 0 ? -300 : 300, // Reduced from 500 to 300 for faster transitions
+      x: direction > 0 ? (isMobile ? -200 : -300) : isMobile ? 200 : 300, // Smaller distance on mobile
       opacity: 0,
     }),
   }
 
-  // Get the indices of all slides to ensure proper preloading
-  const prevIndex = carouselState.currentIndex === 0 ? slides.length - 1 : carouselState.currentIndex - 1
-  const nextIndex = (carouselState.currentIndex + 1) % slides.length
+  // Simplified animation transitions for mobile
+  const getTransition = () => {
+    if (isMobile) {
+      return {
+        x: { type: "tween", duration: 0.3 }, // Use simpler tween on mobile
+        opacity: { duration: 0.2 },
+      }
+    }
 
-  // Special preloading for the first slide when on the last slide
-  const needsSpecialPreload = carouselState.currentIndex === slides.length - 1
+    return {
+      x: { type: "spring", stiffness: 300, damping: 30 }, // Reduced stiffness
+      opacity: { duration: 0.25 },
+    }
+  }
 
   return (
     <>
       <Head>
-        {/* Preload link tags in the head with higher importance */}
-        {slides.map((slide) => (
+        {/* Preload only the current, previous and next slides */}
+        {[
+          slides[currentIndex],
+          slides[currentIndex === 0 ? slides.length - 1 : currentIndex - 1],
+          slides[(currentIndex + 1) % slides.length],
+        ].map((slide) => (
           <link key={slide.id} rel="preload" href={slide.image} as="image" type="image/webp" importance="high" />
         ))}
       </Head>
 
-      <section
-        id="hero-carousel"
-        className="relative h-screen overflow-hidden"
-        onTouchStart={() => {}}
-        onTouchMove={() => {}}
-        onTouchEnd={() => {}}
-      >
-        {/* Eagerly load all images upfront */}
-
-        {/* Special preloading for the first slide when on the last slide */}
-
+      <section id="hero-carousel" className="relative h-screen overflow-hidden">
         {/* Slides */}
-        <AnimatePresence initial={false} custom={carouselState.direction} mode="wait">
+        <AnimatePresence initial={false} custom={direction} mode="wait">
           <motion.div
-            key={carouselState.currentIndex}
-            custom={carouselState.direction}
-            variants={
-              isMobile
-                ? {
-                    enter: { opacity: 0 },
-                    center: { x: 0, opacity: 1 },
-                    exit: { opacity: 0 },
-                  }
-                : slideVariants
-            }
+            key={currentIndex}
+            custom={direction}
+            variants={slideVariants}
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{
-              x: {
-                type: "spring",
-                stiffness: isMobile ? 200 : 350,
-                damping: 30,
-              }, // Increased stiffness for faster motion
-              opacity: { duration: 0.25 }, // Reduced for faster fade
-            }}
+            transition={getTransition()}
             className="absolute inset-0"
           >
-            <div className="relative h-full w-full transform-gpu will-change-transform">
+            <div className="relative h-full w-full">
               <NextImage
-                src={slides[carouselState.currentIndex].image}
-                alt={slides[carouselState.currentIndex].title}
+                src={slides[currentIndex].image}
+                alt={slides[currentIndex].title}
                 fill
                 className="object-cover"
                 priority={true}
-                fetchPriority="high"
                 sizes="100vw"
-                quality={90}
+                quality={isMobile ? 80 : 90} // Lower quality on mobile for better performance
                 placeholder="blur"
                 blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
-                loading="eager"
               />
               <div className="absolute inset-0 bg-forest-green/50" />
 
@@ -290,35 +230,34 @@ export default function HeroCarousel() {
               <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-winter-white px-4">
                 <motion.h1
                   className="text-4xl md:text-6xl lg:text-7xl font-playfair mb-6"
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: isMobile ? 10 : 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: 0.15 }} // Faster animations
+                  transition={{ duration: isMobile ? 0.3 : 0.4, delay: isMobile ? 0.1 : 0.15 }}
                 >
-                  {slides[carouselState.currentIndex].title}
+                  {slides[currentIndex].title}
                 </motion.h1>
 
                 <motion.p
                   className="text-xl md:text-2xl font-montserrat font-light max-w-3xl mb-12"
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: isMobile ? 10 : 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: 0.25 }} // Faster animations
+                  transition={{ duration: isMobile ? 0.3 : 0.4, delay: isMobile ? 0.15 : 0.25 }}
                 >
-                  {slides[carouselState.currentIndex].description}
+                  {slides[currentIndex].description}
                 </motion.p>
 
                 <motion.div
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: isMobile ? 10 : 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: 0.35 }} // Faster animations
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  transition={{ duration: isMobile ? 0.3 : 0.4, delay: isMobile ? 0.2 : 0.35 }}
+                  whileHover={isMobile ? {} : { scale: 1.05 }}
+                  whileTap={isMobile ? {} : { scale: 0.95 }}
                 >
                   <Link
-                    href={slides[carouselState.currentIndex].buttonLink}
+                    href={slides[currentIndex].buttonLink}
                     className="bg-winter-white text-forest-green px-8 py-4 font-montserrat text-sm uppercase tracking-wider font-light transition-all duration-300 hover:bg-gold-accent"
-                    prefetch={true}
                   >
-                    {slides[carouselState.currentIndex].buttonText}
+                    {slides[currentIndex].buttonText}
                   </Link>
                 </motion.div>
               </div>
@@ -331,8 +270,8 @@ export default function HeroCarousel() {
           onClick={goToPrevious}
           className="absolute top-1/2 left-4 -translate-y-1/2 bg-forest-green/70 text-winter-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 hover:bg-gold-accent hover:text-forest-green focus:outline-none z-10"
           aria-label="Previous slide"
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
+          whileHover={isMobile ? {} : { scale: 1.1 }}
+          whileTap={isMobile ? { scale: 0.95 } : { scale: 0.9 }}
         >
           <ChevronLeft size={24} />
         </motion.button>
@@ -341,13 +280,13 @@ export default function HeroCarousel() {
           onClick={goToNext}
           className="absolute top-1/2 right-4 -translate-y-1/2 bg-forest-green/70 text-winter-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 hover:bg-gold-accent hover:text-forest-green focus:outline-none z-10"
           aria-label="Next slide"
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
+          whileHover={isMobile ? {} : { scale: 1.1 }}
+          whileTap={isMobile ? { scale: 0.95 } : { scale: 0.9 }}
         >
           <ChevronRight size={24} />
         </motion.button>
 
-        {/* Indicators */}
+        {/* Indicators - optimized for mobile */}
         <div className="absolute bottom-8 left-0 right-0 flex justify-center space-x-3 z-10">
           {slides.map((_, index) => (
             <motion.button
@@ -355,20 +294,23 @@ export default function HeroCarousel() {
               onClick={() => {
                 if (isAnimating) return
                 setIsAnimating(true)
-                setCarouselState((prevState) => ({
-                  currentIndex: index,
-                  direction: index > prevState.currentIndex ? 1 : -1,
-                }))
-                requestAnimationFrame(() => {
-                  timeoutRef.current = setTimeout(() => {
+                setDirection(index > currentIndex ? 1 : -1)
+                setCurrentIndex(index)
+                timeoutRef.current = setTimeout(
+                  () => {
                     setIsAnimating(false)
-                  }, 400)
-                })
+                  },
+                  isMobile ? 300 : 400,
+                )
               }}
-              className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                index === carouselState.currentIndex ? "bg-gold-accent transform scale-125" : "bg-winter-white/60"
+              className={`h-3 rounded-full transition-all duration-300 ${
+                index === currentIndex ? "bg-gold-accent" : "bg-winter-white/60"
               }`}
-              whileHover={{ scale: 1.2 }}
+              style={{
+                width: index === currentIndex ? "2rem" : "0.75rem",
+                transform: index === currentIndex && !isMobile ? "scale(1.1)" : "scale(1)",
+              }}
+              whileHover={isMobile ? {} : { scale: 1.2 }}
               aria-label={`Go to slide ${index + 1}`}
             />
           ))}
