@@ -33,7 +33,7 @@ const cormorant = Cormorant_Garamond({
 });
 
 export const metadata: Metadata = {
-  title: "Garhwal Goats | Premium Alpine Luxury",
+  title: "Garhwal Goats",
   description:
     "Experience the finest quality goat products from the Himalayan mountains. Garhwal Goats offers premium, ethically raised goats with mountain heritage and refined elegance.",
   generator: "v0.dev",
